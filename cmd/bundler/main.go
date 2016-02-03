@@ -59,7 +59,7 @@ func processFile(path string) error {
 		return err
 	}
 
-	fmt.Println("Writing Temp File:", f.Name()+"-")
+	fmt.Println("Writing Temp File for:", f.Name())
 	newFile, err := ioutil.TempFile("", f.Name()+"-")
 	if err != nil {
 		return err
@@ -72,7 +72,6 @@ func processFile(path string) error {
 	dirname, filename := filepath.Split(path)
 	ext := filepath.Ext(filename)
 	filename = filepath.Base(filename)
-	// filename = filename[0:strings.LastIndex(filename, ext)]
 
 	newName = dirname + filename[0:strings.LastIndex(filename, ext)]
 
@@ -84,11 +83,9 @@ func processFile(path string) error {
 
 		h := md5.New()
 		h.Write(b)
-		// io.WriteString(h, string(content))
-		// hash
 		hash := string(h.Sum(nil))
 
-		newName += "-" + hash + ext
+		newName += "-" + fmt.Sprintf("%x", hash) + ext
 
 	} else {
 		if isDirMode {
@@ -170,15 +167,17 @@ func parseFlags() {
 
 	flag.Parse()
 
-	input = *flagFileOrDir
+	input = strings.TrimSpace(*flagFileOrDir)
 	output = *flagOuputFile
 	leftDelim = *flagLeftDelim
 	rightDelim = *flagRightDelim
 	ignore = *flagIgnore
 
+	wasBlank := len(input) == 0
+
 	input = filepath.Clean(input)
 
-	if len(strings.TrimSpace(input)) == 0 {
+	if wasBlank && input == "." {
 		panic("** No File Or Directory specified with -i option")
 	}
 
