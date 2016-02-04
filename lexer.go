@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 )
 
+// Contant bundler variables
 const (
 	DefaultLeftDelim  = "//include("
 	DefaultRightDelim = ")"
