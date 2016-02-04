@@ -26,6 +26,44 @@ const (
 - File 3`
 )
 
+func TestSingleFileHashWithSymlinks(t *testing.T) {
+
+	pwd, err := os.Getwd()
+	Equal(t, err, nil)
+
+	filename, err := BundleFile(pwd+"/testfiles/test2/file1.txt", "", "include(", ")")
+	Equal(t, err, nil)
+	NotEqual(t, filepath.Base(filename), "file1.txt")
+
+	b, err := ioutil.ReadFile(filename)
+	Equal(t, err, nil)
+	NotEqual(t, len(b), 0)
+
+	Equal(t, string(b), final1)
+
+	err = os.Remove(filename)
+	Equal(t, err, nil)
+}
+
+func TestSingleFileWithOutputAndSymlinks(t *testing.T) {
+
+	pwd, err := os.Getwd()
+	Equal(t, err, nil)
+
+	filename, err := BundleFile(pwd+"/testfiles/test2/file1.txt", "test.txt", "include(", ")")
+	Equal(t, err, nil)
+	Equal(t, filepath.Base(filename), "test.txt")
+
+	b, err := ioutil.ReadFile(filename)
+	Equal(t, err, nil)
+	NotEqual(t, len(b), 0)
+
+	Equal(t, string(b), final1)
+
+	err = os.Remove(filename)
+	Equal(t, err, nil)
+}
+
 func TestDirHash(t *testing.T) {
 
 	pwd, err := os.Getwd()

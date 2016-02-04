@@ -187,7 +187,30 @@ func bundle(r io.Reader, w io.Writer, dir string, leftDelim string, rightDelim s
 	}
 
 	if !fi.IsDir() {
-		return errors.New("dir passed is not a directory")
+
+		// check if symlink
+
+		if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
+
+			link, err := filepath.EvalSymlinks(dir)
+			if err != nil {
+				return errors.New("Error Resolving Symlink:" + err.Error())
+			}
+
+			fi, err = os.Stat(link)
+			if err != nil {
+				return err
+			}
+
+			if !fi.IsDir() {
+				return errors.New("dir passed is not a directory")
+			}
+
+			dir = link
+
+		} else {
+			return errors.New("dir passed is not a directory")
+		}
 	}
 
 	l, err := NewLexer("bundle", r, leftDelim, rightDelim)
