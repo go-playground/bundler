@@ -2,6 +2,9 @@
 
 bundler is a generic file combiner of any type of files using a custom left and right delimiter, i.e. css or js files using a lexer. bundler can be used via command line or as a library.
 
+#### Why
+I was writing an asset pipeline and needed a way to combine the files using some sort of include format and so why not a flexible library to handle that and can be used elsewhere.
+
 #### Installation
 ------------------
 Use go get
