@@ -89,7 +89,7 @@ func bundleDir(path string, dir string, isSymlinkDir bool, symlinkDir string, ig
 		}
 
 		// process file
-		file, err := BundleFile(p, output, leftDelim, rightDelim)
+		file, err := bundleFile(p, output, leftDelim, rightDelim, true)
 		if err != nil {
 			return nil, err
 		}
@@ -106,18 +106,21 @@ func BundleFile(path string, output string, leftDelim string, rightDelim string)
 }
 
 func bundleFile(path string, output string, leftDelim string, rightDelim string, isDirMode bool) (string, error) {
+
 	f, err := os.Open(path)
 	if err != nil {
 		return "", err
 	}
 
-	fmt.Println("Writing Temp File for:", f.Name())
-	newFile, err := ioutil.TempFile("", f.Name()+"-")
+	// fmt.Println("Writing Temp File for:", f.Name())
+	newFile, err := ioutil.TempFile("", filepath.Base(f.Name()))
 	if err != nil {
 		return "", err
 	}
 
-	Bundle(f, newFile, filepath.Dir(path), leftDelim, rightDelim)
+	if err = Bundle(f, newFile, filepath.Dir(path), leftDelim, rightDelim); err != nil {
+		return "", err
+	}
 
 	var newName string
 
@@ -142,14 +145,16 @@ func bundleFile(path string, output string, leftDelim string, rightDelim string,
 	} else {
 		if isDirMode {
 			newName += "-" + output + ext
+		} else {
+			newName = dirname + output
 		}
-
-		newName = dirname + output
 	}
 
-	fmt.Println("Renaming from", newFile.Name(), "to", newName)
+	// fmt.Println("Renaming from", newFile.Name(), "to", newName)
 
-	os.Rename(newFile.Name(), newName)
+	if err = os.Rename(newFile.Name(), newName); err != nil {
+		return "", err
+	}
 
 	return newName, nil
 }
