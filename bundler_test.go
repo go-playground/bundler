@@ -31,8 +31,6 @@ func TestDirHash(t *testing.T) {
 	pwd, err := os.Getwd()
 	Equal(t, err, nil)
 
-	// ignoreRegexp, err = regexp.Compile(ignore)
-
 	filenames, err := BundleDir(pwd+"/testfiles/test1", "", "include(", ")", nil)
 	Equal(t, err, nil)
 	Equal(t, len(filenames), 3)
