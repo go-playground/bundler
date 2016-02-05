@@ -26,7 +26,7 @@ var (
 
 	ignoreRegexp *regexp.Regexp
 
-	processed []string
+	processed []*bundler.ProcessedFile
 )
 
 func main() {
@@ -45,7 +45,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		PrintResults(processed)
+		printResults(processed...)
 		return
 	}
 
@@ -56,17 +56,18 @@ func main() {
 	}
 
 	processed = append(processed, file)
-	PrintResults(processed)
+	printResults(processed...)
 }
 
-func PrintResults(processed []string) {
-	fmt.Println("The following files were processed:\n")
+func printResults(processed ...*bundler.ProcessedFile) {
+
+	fmt.Printf("The following files were processed:\n\n")
 
 	for _, file := range processed {
-		fmt.Println("  " + file)
+		fmt.Println("  " + file.NewFilename)
 	}
 
-	fmt.Println("\n")
+	fmt.Printf("\n\n")
 }
 
 func parseFlags() {

@@ -13,16 +13,22 @@ import (
 	"strings"
 )
 
+// ProcessedFile contains the information of the processed files.
+type ProcessedFile struct {
+	OriginalFilename string
+	NewFilename      string
+}
+
 // BundleDir bundles an entire directory recursively and returns an array of filenames and if an error occured processing
 // suffix will be appended to filenames, if blank a hash of file contents will be added
-func BundleDir(dirname string, suffix string, leftDelim string, rightDelim string, ignoreRegexp *regexp.Regexp) ([]string, error) {
+func BundleDir(dirname string, suffix string, leftDelim string, rightDelim string, ignoreRegexp *regexp.Regexp) ([]*ProcessedFile, error) {
 	return bundleDir(dirname, "", false, "", ignoreRegexp, suffix, leftDelim, rightDelim)
 }
 
-func bundleDir(path string, dir string, isSymlinkDir bool, symlinkDir string, ignoreRegexp *regexp.Regexp, output string, leftDelim string, rightDelim string) ([]string, error) {
+func bundleDir(path string, dir string, isSymlinkDir bool, symlinkDir string, ignoreRegexp *regexp.Regexp, output string, leftDelim string, rightDelim string) ([]*ProcessedFile, error) {
 
 	var p string
-	var processed []string
+	var processed []*ProcessedFile
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -101,25 +107,25 @@ func bundleDir(path string, dir string, isSymlinkDir bool, symlinkDir string, ig
 }
 
 // BundleFile bundles a single file on disk and returns the filename and if an error occured processing
-func BundleFile(path string, output string, leftDelim string, rightDelim string) (string, error) {
+func BundleFile(path string, output string, leftDelim string, rightDelim string) (*ProcessedFile, error) {
 	return bundleFile(path, output, leftDelim, rightDelim, false)
 }
 
-func bundleFile(path string, output string, leftDelim string, rightDelim string, isDirMode bool) (string, error) {
+func bundleFile(path string, output string, leftDelim string, rightDelim string, isDirMode bool) (*ProcessedFile, error) {
 
 	f, err := os.Open(path)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// fmt.Println("Writing Temp File for:", f.Name())
 	newFile, err := ioutil.TempFile("", filepath.Base(f.Name()))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if err = Bundle(f, newFile, filepath.Dir(path), leftDelim, rightDelim); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var newName string
@@ -133,7 +139,7 @@ func bundleFile(path string, output string, leftDelim string, rightDelim string,
 	if output == "" {
 		b, err := ioutil.ReadFile(newFile.Name())
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
 		h := md5.New()
@@ -153,10 +159,10 @@ func bundleFile(path string, output string, leftDelim string, rightDelim string,
 	// fmt.Println("Renaming from", newFile.Name(), "to", newName)
 
 	if err = os.Rename(newFile.Name(), newName); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return newName, nil
+	return &ProcessedFile{OriginalFilename: path, NewFilename: newName}, nil
 }
 
 // Bundle combines the given input and writes it out to the provided writer

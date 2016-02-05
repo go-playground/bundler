@@ -33,15 +33,15 @@ func TestSingleFileHashWithSymlinks(t *testing.T) {
 
 	filename, err := BundleFile(pwd+"/testfiles/test2/file1.txt", "", "include(", ")")
 	Equal(t, err, nil)
-	NotEqual(t, filepath.Base(filename), "file1.txt")
+	NotEqual(t, filepath.Base(filename.NewFilename), filepath.Base(filename.OriginalFilename))
 
-	b, err := ioutil.ReadFile(filename)
+	b, err := ioutil.ReadFile(filename.NewFilename)
 	Equal(t, err, nil)
 	NotEqual(t, len(b), 0)
 
 	Equal(t, string(b), final1)
 
-	err = os.Remove(filename)
+	err = os.Remove(filename.NewFilename)
 	Equal(t, err, nil)
 }
 
@@ -52,15 +52,15 @@ func TestSingleFileWithOutputAndSymlinks(t *testing.T) {
 
 	filename, err := BundleFile(pwd+"/testfiles/test2/file1.txt", "test.txt", "include(", ")")
 	Equal(t, err, nil)
-	Equal(t, filepath.Base(filename), "test.txt")
+	Equal(t, filepath.Base(filename.NewFilename), "test.txt")
 
-	b, err := ioutil.ReadFile(filename)
+	b, err := ioutil.ReadFile(filename.NewFilename)
 	Equal(t, err, nil)
 	NotEqual(t, len(b), 0)
 
 	Equal(t, string(b), final1)
 
-	err = os.Remove(filename)
+	err = os.Remove(filename.NewFilename)
 	Equal(t, err, nil)
 }
 
@@ -73,31 +73,31 @@ func TestDirHash(t *testing.T) {
 	Equal(t, err, nil)
 	Equal(t, len(filenames), 3)
 
-	b, err := ioutil.ReadFile(filenames[0])
+	b, err := ioutil.ReadFile(filenames[0].NewFilename)
 	Equal(t, err, nil)
 	NotEqual(t, len(b), 0)
 
 	Equal(t, string(b), final1)
 
-	err = os.Remove(filenames[0])
+	err = os.Remove(filenames[0].NewFilename)
 	Equal(t, err, nil)
 
-	b, err = ioutil.ReadFile(filenames[1])
+	b, err = ioutil.ReadFile(filenames[1].NewFilename)
 	Equal(t, err, nil)
 	NotEqual(t, len(b), 0)
 
 	Equal(t, string(b), "- File 2")
 
-	err = os.Remove(filenames[1])
+	err = os.Remove(filenames[1].NewFilename)
 	Equal(t, err, nil)
 
-	b, err = ioutil.ReadFile(filenames[2])
+	b, err = ioutil.ReadFile(filenames[2].NewFilename)
 	Equal(t, err, nil)
 	NotEqual(t, len(b), 0)
 
 	Equal(t, string(b), "- File 3")
 
-	err = os.Remove(filenames[2])
+	err = os.Remove(filenames[2].NewFilename)
 	Equal(t, err, nil)
 }
 
@@ -112,36 +112,36 @@ func TestDirSuffix(t *testing.T) {
 	Equal(t, err, nil)
 	Equal(t, len(filenames), 3)
 
-	b, err := ioutil.ReadFile(filenames[0])
+	b, err := ioutil.ReadFile(filenames[0].NewFilename)
 	Equal(t, err, nil)
 	NotEqual(t, len(b), 0)
-	Equal(t, filepath.Base(filenames[0]), "file1-testsuffix.txt")
+	Equal(t, filepath.Base(filenames[0].NewFilename), "file1-testsuffix.txt")
 
 	Equal(t, string(b), final1)
 
-	err = os.Remove(filenames[0])
+	err = os.Remove(filenames[0].NewFilename)
 	Equal(t, err, nil)
 
-	Equal(t, filepath.Base(filenames[1]), "file2-testsuffix.txt")
+	Equal(t, filepath.Base(filenames[1].NewFilename), "file2-testsuffix.txt")
 
-	b, err = ioutil.ReadFile(filenames[1])
+	b, err = ioutil.ReadFile(filenames[1].NewFilename)
 	Equal(t, err, nil)
 	NotEqual(t, len(b), 0)
 
 	Equal(t, string(b), "- File 2")
 
-	err = os.Remove(filenames[1])
+	err = os.Remove(filenames[1].NewFilename)
 	Equal(t, err, nil)
 
-	Equal(t, filepath.Base(filenames[2]), "file3-testsuffix.txt")
+	Equal(t, filepath.Base(filenames[2].NewFilename), "file3-testsuffix.txt")
 
-	b, err = ioutil.ReadFile(filenames[2])
+	b, err = ioutil.ReadFile(filenames[2].NewFilename)
 	Equal(t, err, nil)
 	NotEqual(t, len(b), 0)
 
 	Equal(t, string(b), "- File 3")
 
-	err = os.Remove(filenames[2])
+	err = os.Remove(filenames[2].NewFilename)
 	Equal(t, err, nil)
 }
 
@@ -152,15 +152,15 @@ func TestSingleFileHash(t *testing.T) {
 
 	filename, err := BundleFile(pwd+"/testfiles/test1/file1.txt", "", "include(", ")")
 	Equal(t, err, nil)
-	NotEqual(t, filepath.Base(filename), "file1.txt")
+	NotEqual(t, filepath.Base(filename.NewFilename), filepath.Base(filename.OriginalFilename))
 
-	b, err := ioutil.ReadFile(filename)
+	b, err := ioutil.ReadFile(filename.NewFilename)
 	Equal(t, err, nil)
 	NotEqual(t, len(b), 0)
 
 	Equal(t, string(b), final1)
 
-	err = os.Remove(filename)
+	err = os.Remove(filename.NewFilename)
 	Equal(t, err, nil)
 }
 
@@ -171,14 +171,14 @@ func TestSingleFileWithOutput(t *testing.T) {
 
 	filename, err := BundleFile(pwd+"/testfiles/test1/file1.txt", "test.txt", "include(", ")")
 	Equal(t, err, nil)
-	Equal(t, filepath.Base(filename), "test.txt")
+	Equal(t, filepath.Base(filename.NewFilename), "test.txt")
 
-	b, err := ioutil.ReadFile(filename)
+	b, err := ioutil.ReadFile(filename.NewFilename)
 	Equal(t, err, nil)
 	NotEqual(t, len(b), 0)
 
 	Equal(t, string(b), final1)
 
-	err = os.Remove(filename)
+	err = os.Remove(filename.NewFilename)
 	Equal(t, err, nil)
 }
