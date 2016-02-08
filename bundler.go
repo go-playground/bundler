@@ -228,15 +228,15 @@ LOOP:
 	for {
 		itm := l.NextItem()
 
-		switch itm.typ {
-		case itemLeftDelim, itemRightDelim:
+		switch itm.Type {
+		case ItemLeftDelim, ItemRightDelim:
 			if keepDelims {
-				w.Write([]byte(itm.val))
+				w.Write([]byte(itm.Val))
 			}
-		case itemText:
-			w.Write([]byte(itm.val))
-		case itemFile:
-			path := dir + "/" + itm.val
+		case ItemText:
+			w.Write([]byte(itm.Val))
+		case ItemFile:
+			path := dir + "/" + itm.Val
 
 			file, err := os.Open(path)
 			if err != nil {
@@ -247,8 +247,10 @@ LOOP:
 			if err = bundle(file, w, filepath.Dir(path), leftDelim, rightDelim, keepDelims); err != nil {
 				return err
 			}
-		case itemEOF:
+		case ItemEOF:
 			break LOOP
+		case ItemError:
+			return errors.New(itm.Val)
 		}
 	}
 

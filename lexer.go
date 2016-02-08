@@ -16,12 +16,12 @@ const (
 )
 
 const (
-	itemError itemType = iota // error occurred; value is text of error
-	itemEOF
-	itemLeftDelim  // left action delimiter
-	itemRightDelim // right action delimiter
-	itemText       // plain text
-	itemFile       // file keyword
+	ItemError itemType = iota // error occurred; value is text of error
+	ItemEOF
+	ItemLeftDelim  // left action delimiter
+	ItemRightDelim // right action delimiter
+	ItemText       // plain text
+	ItemFile       // file keyword
 )
 
 // itemType identifies the type of lex items.
@@ -33,9 +33,9 @@ type Pos int
 
 // Item represents a token or text string returned from the scanner.
 type Item struct {
-	typ itemType // The type of this item.
-	pos Pos      // The starting position, in bytes, of this item in the input string.
-	val string   // The value of this item.
+	Type itemType // The type of this item.
+	Pos  Pos      // The starting position, in bytes, of this item in the input string.
+	Val  string   // The value of this item.
 }
 
 // stateFn represents the state of the scanner as a function that returns the next state.
@@ -122,14 +122,14 @@ func (l *Lexer) reposition() {
 // errorf returns an error token and terminates the scan by passing
 // back a nil pointer that will be the next state, terminating l.nextItem.
 func (l *Lexer) errorf(format string, args ...interface{}) stateFn {
-	l.items <- Item{itemError, l.start, fmt.Sprintf(format, args...)}
+	l.items <- Item{ItemError, l.start, fmt.Sprintf(format, args...)}
 	return nil
 }
 
 // NextItem returns the next item from the input.
 func (l *Lexer) NextItem() Item {
 	item := <-l.items
-	l.lastPos = item.pos
+	l.lastPos = item.Pos
 	return item
 }
 
@@ -145,7 +145,7 @@ func lexText(l *Lexer) stateFn {
 	for {
 		if strings.HasPrefix(l.input[l.pos:], l.leftDelim) {
 			if l.pos > l.start {
-				l.emit(itemText)
+				l.emit(ItemText)
 			}
 			return lexLeftDelim
 		}
@@ -155,16 +155,16 @@ func lexText(l *Lexer) stateFn {
 	}
 	// Correctly reached EOF.
 	if l.pos > l.start {
-		l.emit(itemText)
+		l.emit(ItemText)
 	}
-	l.emit(itemEOF)
+	l.emit(ItemEOF)
 	return nil
 }
 
 // lexLeftDelim scans the left delimiter, which is known to be present.
 func lexLeftDelim(l *Lexer) stateFn {
 	l.pos += Pos(len(l.leftDelim))
-	l.emit(itemLeftDelim)
+	l.emit(ItemLeftDelim)
 	l.reposition()
 	l.parenDepth = 0
 	return lexFilename
@@ -173,7 +173,7 @@ func lexLeftDelim(l *Lexer) stateFn {
 // lexRightDelim scans the right delimiter, which is known to be present.
 func lexRightDelim(l *Lexer) stateFn {
 	l.pos += Pos(len(l.rightDelim))
-	l.emit(itemRightDelim)
+	l.emit(ItemRightDelim)
 	l.reposition()
 	return lexText
 }
@@ -183,7 +183,7 @@ func lexFilename(l *Lexer) stateFn {
 
 	if strings.HasPrefix(l.input[l.pos:], l.rightDelim) {
 		if l.parenDepth == 0 {
-			l.emit(itemFile)
+			l.emit(ItemFile)
 			return lexRightDelim
 		}
 		return l.errorf("unclosed left paren")
