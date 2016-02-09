@@ -12,17 +12,20 @@ import (
 )
 
 var (
-	flagFileOrDir  = flag.String("i", "", "File or DIR to bundle files for; DIR will bundle all files within the DIR recursivly.")
-	flagOuputFile  = flag.String("o", "", "Output filename, or if using a DIR in -i option the suffix, otherwise will be be the filename with appended hash of file contents.")
-	flagLeftDelim  = flag.String("ld", bundler.DefaultLeftDelim, "the Left Delimiter for file includes, if not specified default to "+bundler.DefaultLeftDelim+".")
-	flagRightDelim = flag.String("rd", bundler.DefaultRightDelim, "the Right Delimiter for file includes, if not specified default to "+bundler.DefaultRightDelim+".")
-	flagIgnore     = flag.String("ignore", "", "Regexp for files/dirs we should ignore i.e. \\.gitignore; only used when -i option is a DIR")
+	flagFileOrDir             = flag.String("i", "", "File or DIR to bundle files for; DIR will bundle all files within the DIR recursivly.")
+	flagOuputFile             = flag.String("o", "", "Output filename, hash appended otherwise, if using a DIR in -i option then this will be the output file directory, which keeps the original file structure.")
+	flagLeftDelim             = flag.String("ld", bundler.DefaultLeftDelim, "the Left Delimiter for file includes, if not specified default to "+bundler.DefaultLeftDelim+".")
+	flagRightDelim            = flag.String("rd", bundler.DefaultRightDelim, "the Right Delimiter for file includes, if not specified default to "+bundler.DefaultRightDelim+".")
+	flagIncludesRelativeToDir = flag.Bool("rtd", true, "Specifies if the files included should be treated as relative to the directory, or relative to the files from which they are included.")
+	flagIgnore                = flag.String("ignore", "", "Regexp for files/dirs we should ignore i.e. \\.gitignore; only used when -i option is a DIR")
 
 	input      string
 	output     string
 	leftDelim  string
 	rightDelim string
 	ignore     string
+
+	relativeToDir bool
 
 	ignoreRegexp *regexp.Regexp
 
@@ -41,7 +44,7 @@ func main() {
 
 	//process multiple files
 	if fi.IsDir() {
-		processed, err = bundler.BundleDir(input, output, leftDelim, rightDelim, ignoreRegexp)
+		processed, err = bundler.BundleDir(input, output, relativeToDir, input, leftDelim, rightDelim, ignoreRegexp)
 		if err != nil {
 			panic(err)
 		}
@@ -50,7 +53,7 @@ func main() {
 	}
 
 	// process file
-	file, err := bundler.BundleFile(input, output, leftDelim, rightDelim)
+	file, err := bundler.BundleFile(input, output, relativeToDir, input, leftDelim, rightDelim)
 	if err != nil {
 		panic(err)
 	}
@@ -78,6 +81,7 @@ func parseFlags() {
 	output = *flagOuputFile
 	leftDelim = *flagLeftDelim
 	rightDelim = *flagRightDelim
+	relativeToDir = *flagIncludesRelativeToDir
 	ignore = *flagIgnore
 
 	wasBlank := len(input) == 0

@@ -15,6 +15,7 @@ const (
 	eof               = -1
 )
 
+// Lexed Item Types
 const (
 	ItemError itemType = iota // error occurred; value is text of error
 	ItemEOF

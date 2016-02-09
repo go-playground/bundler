@@ -21,11 +21,11 @@ type ProcessedFile struct {
 
 // BundleDir bundles an entire directory recursively and returns an array of filenames and if an error occured processing
 // suffix will be appended to filenames, if blank a hash of file contents will be added
-func BundleDir(dirname string, suffix string, leftDelim string, rightDelim string, ignoreRegexp *regexp.Regexp) ([]*ProcessedFile, error) {
-	return bundleDir(dirname, "", false, "", ignoreRegexp, suffix, leftDelim, rightDelim)
+func BundleDir(dirname string, suffix string, relativeToDir bool, relativeDir string, leftDelim string, rightDelim string, ignoreRegexp *regexp.Regexp) ([]*ProcessedFile, error) {
+	return bundleDir(dirname, "", false, "", ignoreRegexp, suffix, relativeToDir, relativeDir, leftDelim, rightDelim)
 }
 
-func bundleDir(path string, dir string, isSymlinkDir bool, symlinkDir string, ignoreRegexp *regexp.Regexp, output string, leftDelim string, rightDelim string) ([]*ProcessedFile, error) {
+func bundleDir(path string, dir string, isSymlinkDir bool, symlinkDir string, ignoreRegexp *regexp.Regexp, output string, relativeToDir bool, relativeDir string, leftDelim string, rightDelim string) ([]*ProcessedFile, error) {
 
 	var p string
 	var processed []*ProcessedFile
@@ -57,7 +57,7 @@ func bundleDir(path string, dir string, isSymlinkDir bool, symlinkDir string, ig
 
 		if file.IsDir() {
 
-			processedFiles, err := bundleDir(p, p, isSymlinkDir, symlinkDir+string(os.PathSeparator)+info.Name(), ignoreRegexp, output, leftDelim, rightDelim)
+			processedFiles, err := bundleDir(p, p, isSymlinkDir, symlinkDir+string(os.PathSeparator)+info.Name(), ignoreRegexp, output, relativeToDir, relativeDir, leftDelim, rightDelim)
 			if err != nil {
 				return nil, err
 			}
@@ -83,7 +83,7 @@ func bundleDir(path string, dir string, isSymlinkDir bool, symlinkDir string, ig
 
 			if fi.IsDir() {
 
-				processedFiles, err := bundleDir(link, link, true, fPath, ignoreRegexp, output, leftDelim, rightDelim)
+				processedFiles, err := bundleDir(link, link, true, fPath, ignoreRegexp, output, relativeToDir, relativeDir, leftDelim, rightDelim)
 				if err != nil {
 					return nil, err
 				}
@@ -95,7 +95,7 @@ func bundleDir(path string, dir string, isSymlinkDir bool, symlinkDir string, ig
 		}
 
 		// process file
-		file, err := bundleFile(p, output, leftDelim, rightDelim, true)
+		file, err := bundleFile(p, output, relativeToDir, relativeDir, leftDelim, rightDelim, true)
 		if err != nil {
 			return nil, err
 		}
@@ -107,16 +107,17 @@ func bundleDir(path string, dir string, isSymlinkDir bool, symlinkDir string, ig
 }
 
 // BundleFile bundles a single file on disk and returns the filename and if an error occured processing
-func BundleFile(path string, output string, leftDelim string, rightDelim string) (*ProcessedFile, error) {
-	return bundleFile(path, output, leftDelim, rightDelim, false)
+func BundleFile(path string, output string, relativeToDir bool, relativeDir string, leftDelim string, rightDelim string) (*ProcessedFile, error) {
+	return bundleFile(path, output, relativeToDir, relativeDir, leftDelim, rightDelim, false)
 }
 
-func bundleFile(path string, output string, leftDelim string, rightDelim string, isDirMode bool) (*ProcessedFile, error) {
+func bundleFile(path string, output string, relativeToDir bool, relativeDir string, leftDelim string, rightDelim string, isDirMode bool) (*ProcessedFile, error) {
 
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
 
 	// fmt.Println("Writing Temp File for:", f.Name())
 	newFile, err := ioutil.TempFile("", filepath.Base(f.Name()))
@@ -124,7 +125,7 @@ func bundleFile(path string, output string, leftDelim string, rightDelim string,
 		return nil, err
 	}
 
-	if err = Bundle(f, newFile, filepath.Dir(path), leftDelim, rightDelim); err != nil {
+	if err = Bundle(f, newFile, filepath.Dir(path), relativeToDir, relativeDir, leftDelim, rightDelim); err != nil {
 		return nil, err
 	}
 
@@ -134,9 +135,13 @@ func bundleFile(path string, output string, leftDelim string, rightDelim string,
 	ext := filepath.Ext(filename)
 	filename = filepath.Base(filename)
 
+	if isDirMode && output != "" {
+		dirname = output + string(filepath.Separator) + dirname + string(filepath.Separator)
+	}
+
 	newName = dirname + filename[0:strings.LastIndex(filename, ext)]
 
-	if output == "" {
+	if isDirMode || output == "" {
 		b, err := ioutil.ReadFile(newFile.Name())
 		if err != nil {
 			return nil, err
@@ -149,14 +154,17 @@ func bundleFile(path string, output string, leftDelim string, rightDelim string,
 		newName += "-" + fmt.Sprintf("%x", hash) + ext
 
 	} else {
-		if isDirMode {
-			newName += "-" + output + ext
-		} else {
-			newName = dirname + output
-		}
+		newName = dirname + output
 	}
 
-	// fmt.Println("Renaming from", newFile.Name(), "to", newName)
+	abs, err := filepath.Abs(filepath.Dir(newName))
+	if err != nil {
+		return nil, err
+	}
+
+	if err = os.MkdirAll(abs, os.FileMode(0777)); err != nil {
+		return nil, err
+	}
 
 	if err = os.Rename(newFile.Name(), newName); err != nil {
 		return nil, err
@@ -167,19 +175,21 @@ func bundleFile(path string, output string, leftDelim string, rightDelim string,
 
 // Bundle combines the given input and writes it out to the provided writer
 // removing delims from the combined files
-func Bundle(r io.Reader, w io.Writer, dir string, leftDelim string, rightDelim string) error {
-	return bundle(r, w, dir, leftDelim, rightDelim, false)
+func Bundle(r io.Reader, w io.Writer, dir string, relativeToDir bool, relativeDir string, leftDelim string, rightDelim string) error {
+	return bundle(r, w, dir, relativeToDir, relativeDir, leftDelim, rightDelim, false)
 }
 
 // BundleKeepDelims combines the given input and writes it out to the provided writer
 // but unlike Bundle() keeps the delims in the combined data
-func BundleKeepDelims(r io.Reader, w io.Writer, dir string, leftDelim string, rightDelim string) error {
-	return bundle(r, w, dir, leftDelim, rightDelim, true)
+func BundleKeepDelims(r io.Reader, w io.Writer, dir string, relativeToDir bool, relativeDir string, leftDelim string, rightDelim string) error {
+	return bundle(r, w, dir, relativeToDir, relativeDir, leftDelim, rightDelim, true)
 }
 
-func bundle(r io.Reader, w io.Writer, dir string, leftDelim string, rightDelim string, keepDelims bool) error {
+func bundle(r io.Reader, w io.Writer, dir string, relativeToDir bool, relativeDir string, leftDelim string, rightDelim string, keepDelims bool) error {
 
 	var err error
+	var path string
+	var finalPath string
 
 	if !filepath.IsAbs(dir) {
 		if dir, err = filepath.Abs(dir); err != nil {
@@ -236,7 +246,13 @@ LOOP:
 		case ItemText:
 			w.Write([]byte(itm.Val))
 		case ItemFile:
-			path := dir + "/" + itm.Val
+			if relativeToDir {
+				finalPath = dir
+				path = relativeDir + "/" + itm.Val
+			} else {
+				finalPath = filepath.Dir(path)
+				path = dir + "/" + itm.Val
+			}
 
 			file, err := os.Open(path)
 			if err != nil {
@@ -244,7 +260,7 @@ LOOP:
 			}
 			defer file.Close()
 
-			if err = bundle(file, w, filepath.Dir(path), leftDelim, rightDelim, keepDelims); err != nil {
+			if err = bundle(file, w, finalPath, relativeToDir, relativeDir, leftDelim, rightDelim, keepDelims); err != nil {
 				return err
 			}
 		case ItemEOF:
