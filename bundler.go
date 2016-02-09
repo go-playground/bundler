@@ -19,7 +19,7 @@ type ProcessedFile struct {
 	NewFilename      string
 }
 
-// BundleDir bundles an entire directory recursively and returns an array of filenames and if an error occured processing
+// BundleDir bundles an entire directory recursively and returns an array of filenames and if an error occurred processing
 // suffix will be appended to filenames, if blank a hash of file contents will be added
 func BundleDir(dirname string, suffix string, relativeToDir bool, relativeDir string, leftDelim string, rightDelim string, ignoreRegexp *regexp.Regexp) ([]*ProcessedFile, error) {
 	return bundleDir(dirname, "", false, "", ignoreRegexp, suffix, relativeToDir, relativeDir, leftDelim, rightDelim)
@@ -106,7 +106,7 @@ func bundleDir(path string, dir string, isSymlinkDir bool, symlinkDir string, ig
 	return processed, nil
 }
 
-// BundleFile bundles a single file on disk and returns the filename and if an error occured processing
+// BundleFile bundles a single file on disk and returns the filename and if an error occurred processing
 func BundleFile(path string, output string, relativeToDir bool, relativeDir string, leftDelim string, rightDelim string) (*ProcessedFile, error) {
 	return bundleFile(path, output, relativeToDir, relativeDir, leftDelim, rightDelim, false)
 }
