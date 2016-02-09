@@ -1,5 +1,9 @@
 ## bundler
 
+[![Build Status](https://semaphoreci.com/api/v1/joeybloggs/bundler/branches/master/badge.svg)](https://semaphoreci.com/joeybloggs/bundler)
+[![Go Report Card](http://goreportcard.com/badge/go-playground/bundler)](http://goreportcard.com/badge/go-playground/bundler)
+[![GoDoc](https://godoc.org/github.com/go-playground/bundler?status.svg)](https://godoc.org/github.com/go-playground/bundler)
+
 bundler is a generic file combiner of any type of files using a custom left and right delimiter, i.e. css or js files using a lexer. bundler can be used via command line or as a library.
 
 #### Why
