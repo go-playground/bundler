@@ -6,6 +6,10 @@ bundler is a generic file combiner of any type of files using a custom left and 
 --------
 I was writing an asset pipeline and needed a way to combine the files using some sort of include format and so why not a flexible library to handle that and can be used elsewhere.
 
+#### Best Part
+----------
+uses a Lexer to process the files, with necessary components exposed to use as you wish.
+
 #### Installation
 ------------------
 Use go get
